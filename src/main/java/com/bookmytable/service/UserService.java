@@ -3,16 +3,18 @@ package com.bookmytable.service;
 import com.bookmytable.entity.business.User;
 import com.bookmytable.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.Optional;
+
 @RequiredArgsConstructor
 @Service // Bu sınıfın bir servis sınıfı olduğunu belirtir
 public class UserService {
 
     private final UserRepository userRepository;
-
-
+    private final PasswordEncoder passwordEncoder;
 
     // Tüm kullanıcıları listeleme işlevi
     public List<User> getAllUsers() {
@@ -24,8 +26,12 @@ public class UserService {
         return userRepository.findById(id);
     }
 
-    // Yeni bir kullanıcı ekleme işlevi
-    public User createUser(User user) {
+    // Yeni bir kullanıcı kayıt işlemi
+    public User registerUser(User user) {
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already in use");
+        }
+        user.setPassword(passwordEncoder.encode(user.getPassword())); // Şifreyi hashliyoruz
         return userRepository.save(user);
     }
 
@@ -33,9 +39,18 @@ public class UserService {
     public User updateUser(Long id, User updatedUser) {
         return userRepository.findById(id)
                 .map(user -> {
+                    // Eğer e-posta güncelleniyorsa ve mevcutsa hata fırlatıyoruz
+                    if (!user.getEmail().equals(updatedUser.getEmail()) &&
+                            userRepository.findByEmail(updatedUser.getEmail()).isPresent()) {
+                        throw new RuntimeException("Email already in use");
+                    }
                     user.setUsername(updatedUser.getUsername());
                     user.setEmail(updatedUser.getEmail());
-                    user.setPassword(updatedUser.getPassword());
+
+                    // Şifre değiştiriliyorsa hashleyip güncelliyoruz
+                    if (!updatedUser.getPassword().equals(user.getPassword())) {
+                        user.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
+                    }
                     return userRepository.save(user);
                 })
                 .orElseThrow(() -> new RuntimeException("User not found"));

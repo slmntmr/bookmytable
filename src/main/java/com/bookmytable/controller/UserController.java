@@ -5,27 +5,29 @@ import com.bookmytable.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+
+@RestController
 @RequiredArgsConstructor
-@RestController // REST API uç noktalarını tanımlar
-@RequestMapping("/api/users") // Tüm uç noktalar /api/users ile başlar
+@RequestMapping("/api/users")
 public class UserController {
 
     private final UserService userService;
 
-
-
-    // Tüm kullanıcıları listeleyen GET isteği
+    // Tüm kullanıcıları listeleme işlemi, yalnızca ADMIN rolüne sahip kullanıcılar erişebilir
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
 
-    // ID ile kullanıcıyı bulan GET isteği
+    // Belirli bir kullanıcıyı ID'ye göre alma işlemi, yalnızca ADMIN rolüne sahip kullanıcılar erişebilir
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
         Optional<User> user = userService.getUserById(id);
@@ -33,21 +35,16 @@ public class UserController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    // Yeni kullanıcı ekleyen POST isteği
-    @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        User createdUser = userService.createUser(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
-    }
-
-    // Var olan kullanıcıyı güncelleyen PUT isteği
+    // Var olan bir kullanıcıyı güncelleme işlemi, yalnızca ADMIN rolüne sahip kullanıcılar erişebilir
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
         User user = userService.updateUser(id, updatedUser);
         return ResponseEntity.ok(user);
     }
 
-    // Kullanıcıyı ID ile silen DELETE isteği
+    // Belirli bir kullanıcıyı silme işlemi, yalnızca ADMIN rolüne sahip kullanıcılar erişebilir
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);

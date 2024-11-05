@@ -24,13 +24,13 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // Security yapılandırmasını yapıyoruz
         http
                 .csrf(csrf -> csrf.disable()) // CSRF korumasını devre dışı bırakıyoruz
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/authenticate").permitAll() // /authenticate uç noktasına izin veriyoruz
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN") // /admin/** uç noktalarına yalnızca ADMIN rolüne sahip olanlar erişebilir
-                        .anyRequest().authenticated() // Diğer tüm isteklere kimlik doğrulaması zorunlu
+                        .requestMatchers("/api/users/register", "/api/authenticate").permitAll() // Kayıt ve giriş için izin
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN") // /api/admin/** yalnızca ADMIN rolüne sahip kullanıcılar için
+                        .requestMatchers("/api/users/**").hasAnyRole("USER", "ADMIN") // /api/users/** USER ve ADMIN rolleri için
+                        .anyRequest().authenticated() // Diğer tüm uç noktalara erişim için kimlik doğrulama gerekli
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Stateless oturum yönetimi
@@ -44,7 +44,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder(); // Şifreleme için BCryptPasswordEncoder kullanıyoruz
     }
 
     @Bean
