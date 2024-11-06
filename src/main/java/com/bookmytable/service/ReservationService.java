@@ -27,8 +27,9 @@ public class ReservationService {
 
     // Mevcut kullanıcıya ait tüm rezervasyonları döndürür
     public List<Reservation> getReservationsForCurrentUser() {
-        String username = getCurrentUsername();
-        User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
+        String email = getCurrentUsername();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
         return reservationRepository.findByUser(user);
     }
 
@@ -56,11 +57,11 @@ public class ReservationService {
         reservationRepository.deleteById(id);
     }
 
-    // Oturum açmış kullanıcının adını almak için yardımcı metot
+    // Oturum açmış kullanıcının email adresini almak için yardımcı metot
     private String getCurrentUsername() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (principal instanceof UserDetails) {
-            return ((UserDetails) principal).getUsername();
+            return ((UserDetails) principal).getUsername(); // Email döndürülüyor
         } else {
             return principal.toString();
         }

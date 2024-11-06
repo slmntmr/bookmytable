@@ -35,26 +35,25 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    // Var olan bir kullanıcıyı güncelleme işlevi
     public User updateUser(Long id, User updatedUser) {
         return userRepository.findById(id)
                 .map(user -> {
-                    // Eğer e-posta güncelleniyorsa ve mevcutsa hata fırlatıyoruz
                     if (!user.getEmail().equals(updatedUser.getEmail()) &&
                             userRepository.findByEmail(updatedUser.getEmail()).isPresent()) {
                         throw new RuntimeException("Email already in use");
                     }
-                    user.setUsername(updatedUser.getUsername());
+
                     user.setEmail(updatedUser.getEmail());
 
-                    // Şifre değiştiriliyorsa hashleyip güncelliyoruz
-                    if (!updatedUser.getPassword().equals(user.getPassword())) {
+                    // Şifre değiştiriliyorsa, yeni şifreyi hashleyip güncelliyoruz
+                    if (updatedUser.getPassword() != null && !passwordEncoder.matches(updatedUser.getPassword(), user.getPassword())) {
                         user.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
                     }
                     return userRepository.save(user);
                 })
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
+
 
     // Kullanıcıyı ID'ye göre silme işlevi
     public void deleteUser(Long id) {
