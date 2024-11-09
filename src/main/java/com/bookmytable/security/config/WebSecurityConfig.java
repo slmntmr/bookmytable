@@ -17,8 +17,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @EnableWebSecurity
 @Configuration
@@ -28,6 +26,11 @@ public class WebSecurityConfig {
 
     private final AuthEntryPointJwt unauthorizedHandler;
     private final UserDetailsServiceImpl userDetailsService;
+
+    private static final String[] AUTH_WHITE_LIST = {
+            "/auth/login",    // /auth/login endpoint'i beyaz listede
+            "/auth/register"  // /auth/register endpoint'ini de beyaz listeye ekledik
+    };
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -41,8 +44,8 @@ public class WebSecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(AUTH_WHITE_LIST).permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers(AUTH_WHITE_LIST).permitAll() // Beyaz listedeki yolları serbest bırakıyoruz
+                        .anyRequest().authenticated() // Diğer tüm istekler kimlik doğrulama gerektirir
                 )
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
                 .addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
@@ -67,30 +70,4 @@ public class WebSecurityConfig {
         authenticationProvider.setPasswordEncoder(passwordEncoder());
         return authenticationProvider;
     }
-
-    @Bean
-    public WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")
-                        .allowedOrigins("*")
-                        .allowedHeaders("*")
-                        .allowedMethods("*");
-            }
-        };
-    }
-
-    private static final String[] AUTH_WHITE_LIST = {
-            "/",
-            "index.html",
-            "/images/**",
-            "/css/**",
-            "/js/**",
-            "contactMessages/save",
-            "/auth/login",
-            "/v3/api-docs/**",
-            "swagger-ui.html",
-            "/swagger-ui/**"
-    };
 }

@@ -8,4 +8,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
 
     Optional<User> findByEmail(String email);
+
+    // Kullanıcının e-posta adresine göre var olup olmadığını kontrol eden metot
+    boolean existsByEmail(String email);
 }

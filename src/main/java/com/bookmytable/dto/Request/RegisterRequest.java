@@ -1,12 +1,19 @@
 package com.bookmytable.dto.Request;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-// Kullanıcı kayıt isteği için DTO sınıfı
 @Data
 public class RegisterRequest {
 
-    private String email;     // Kullanıcı e-posta adresi
-    private String password;  // Kullanıcı şifresi
+    @NotBlank
+    @Size(max = 50)
+    @Email
+    private String email;
 
+    @NotBlank
+    @Size(min = 6, max = 40)
+    private String password;
 }
