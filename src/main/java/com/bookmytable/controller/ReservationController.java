@@ -1,5 +1,6 @@
 package com.bookmytable.controller;
 
+import com.bookmytable.dto.Response.ReservationResponseDTO;
 import com.bookmytable.entity.business.Reservation;
 import com.bookmytable.service.ReservationService;
 import lombok.RequiredArgsConstructor;
@@ -46,11 +47,11 @@ public class ReservationController {
     // USER ve ADMIN rollerinin yeni rezervasyon ekleme işlemi
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN')")
     @PostMapping("/create")  // POST (http://localhost:8080/api/reservations/create)
-    public ResponseEntity<Reservation> createReservation(@RequestBody Reservation reservation) {
+    public ResponseEntity<ReservationResponseDTO> createReservation(@RequestBody Reservation reservation) {
         Reservation createdReservation = reservationService.createReservation(reservation);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdReservation);
+        ReservationResponseDTO responseDto = reservationService.convertToDto(createdReservation);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
-
     // Sadece ADMIN rolüne sahip kullanıcıların rezervasyon onaylama işlemi
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     @PutMapping("/approve/{id}")  // PUT (http://localhost:8080/api/reservations/approve/{id})
