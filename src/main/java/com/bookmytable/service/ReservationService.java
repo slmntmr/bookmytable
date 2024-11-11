@@ -1,14 +1,16 @@
 package com.bookmytable.service;
 
-
+import com.bookmytable.dto.Request.ReservationRequestDTO;
 import com.bookmytable.dto.Response.ReservationResponseDTO;
 import com.bookmytable.dto.Response.RestaurantResponseDTO;
 import com.bookmytable.dto.Response.UserResponseDTO;
 import com.bookmytable.entity.business.Reservation;
 import com.bookmytable.entity.business.User;
+import com.bookmytable.entity.business.Restaurant;
 import com.bookmytable.entity.enums.ReservationStatus;
 import com.bookmytable.repository.ReservationRepository;
 import com.bookmytable.repository.UserRepository;
+import com.bookmytable.repository.RestaurantRepository;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,89 +26,76 @@ public class ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final UserRepository userRepository;
+    private final RestaurantRepository restaurantRepository;
 
-    /**
-     * Sadece ADMIN rolüne sahip kullanıcılar için tüm rezervasyonları döndürür.
-     * @return List<Reservation> - Tüm rezervasyonların listesi
-     */
+    // ADMIN rolündeki kullanıcılar için tüm rezervasyonları döndürür
     public List<Reservation> getAllReservations() {
         return reservationRepository.findAll();
     }
 
-    /**
-     * Oturum açmış kullanıcıya ait tüm rezervasyonları döndürür.
-     * @return List<Reservation> - Mevcut kullanıcının rezervasyon listesi
-     */
+    // Oturum açmış kullanıcının kendi rezervasyonlarını döndürür
     public List<Reservation> getReservationsForCurrentUser() {
-        String email = getCurrentUsername();  // Oturum açmış kullanıcının e-posta adresini alır
+        String email = getCurrentUsername();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));  // Kullanıcı bulunamazsa hata fırlatır
-        return reservationRepository.findByUser(user);  // Kullanıcının rezervasyonlarını döndürür
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+        return reservationRepository.findByUser(user);
     }
 
-    /**
-     * Belirli bir ID'ye sahip rezervasyonu tüm detaylarıyla birlikte döndürür.
-     * @param id - Rezervasyonun ID değeri
-     * @return Optional<Reservation> - Belirtilen ID'ye sahip rezervasyon
-     */
+    // Belirli bir rezervasyonu ID ile detaylı olarak döndürür
     @Transactional(readOnly = true)
     public Optional<Reservation> getReservationById(Long id) {
-        return reservationRepository.findByIdWithDetails(id);  // İlişkili tüm detaylarıyla birlikte getirir
+        return reservationRepository.findByIdWithDetails(id);
     }
 
-    /**
-     * Yeni bir rezervasyon oluşturur, varsayılan olarak durumu PENDING olarak ayarlanır.
-     * @param reservation - Oluşturulacak rezervasyon bilgisi
-     * @return Reservation - Oluşturulan rezervasyon nesnesi
-     */
+    // Yeni bir rezervasyon oluşturur ve veri tabanına kaydeder
     @Transactional
-    public Reservation createReservation(Reservation reservation) {
-        reservation.setStatus(ReservationStatus.PENDING);  // Varsayılan durum PENDING olarak atanır
-        return reservationRepository.save(reservation);  // Rezervasyonu kaydeder ve geri döndürür
+    public Reservation createReservation(ReservationRequestDTO reservationRequestDTO) {
+        if (reservationRequestDTO.getUserId() == null || reservationRequestDTO.getRestaurantId() == null) {
+            throw new IllegalArgumentException("Kullanıcı ID'si ve Restoran ID'si boş bırakılamaz");
+        }
+
+        User user = userRepository.findById(reservationRequestDTO.getUserId())
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+        Restaurant restaurant = restaurantRepository.findById(reservationRequestDTO.getRestaurantId())
+                .orElseThrow(() -> new RuntimeException("Restoran bulunamadı"));
+
+        Reservation reservation = new Reservation();
+        reservation.setReservationDate(reservationRequestDTO.getReservationDate());
+        reservation.setNumberOfGuests(reservationRequestDTO.getNumberOfGuests());
+        reservation.setStatus(ReservationStatus.PENDING);
+        reservation.setUser(user);
+        reservation.setRestaurant(restaurant);
+
+        return reservationRepository.save(reservation);
     }
 
-    /**
-     * Rezervasyonun durumunu günceller (APPROVED, REJECTED, veya PENDING).
-     * @param id - Güncellenecek rezervasyonun ID'si
-     * @param status - Yeni durum değeri
-     * @return Reservation - Güncellenmiş rezervasyon nesnesi
-     */
+    // Rezervasyon durumunu günceller (APPROVED, REJECTED veya PENDING)
     public Reservation updateReservationStatus(Long id, String status) {
-        return reservationRepository.findById(id)  // Rezervasyonu ID ile bulur
+        return reservationRepository.findById(id)
                 .map(reservation -> {
-                    ReservationStatus reservationStatus = ReservationStatus.valueOf(status);  // Yeni durum değeri enum olarak alınır
-                    reservation.setStatus(reservationStatus);  // Durum güncellenir
-                    return reservationRepository.save(reservation);  // Güncellenmiş rezervasyon kaydedilir
+                    ReservationStatus reservationStatus = ReservationStatus.valueOf(status);
+                    reservation.setStatus(reservationStatus);
+                    return reservationRepository.save(reservation);
                 })
-                .orElseThrow(() -> new RuntimeException("Reservation not found"));  // Rezervasyon yoksa hata fırlatır
+                .orElseThrow(() -> new RuntimeException("Rezervasyon bulunamadı"));
     }
 
-    /**
-     * Rezervasyonu ID ile siler.
-     * @param id - Silinecek rezervasyonun ID'si
-     */
+    // Rezervasyonu ID ile siler
     public void deleteReservation(Long id) {
         reservationRepository.deleteById(id);
     }
 
-    /**
-     * Oturum açmış kullanıcının e-posta adresini almak için yardımcı metot.
-     * @return String - Kullanıcının e-posta adresi
-     */
+    // Oturum açmış kullanıcının e-posta adresini alır
     private String getCurrentUsername() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (principal instanceof UserDetails) {
-            return ((UserDetails) principal).getUsername();  // Eğer principal UserDetails ise, e-posta döndürülür
+            return ((UserDetails) principal).getUsername();
         } else {
             return principal.toString();
         }
     }
 
-    /**
-     * Reservation nesnesini ReservationResponseDTO nesnesine dönüştürür.
-     * @param reservation - Dönüştürülecek rezervasyon nesnesi
-     * @return ReservationResponseDTO - Dönüştürülmüş rezervasyon DTO nesnesi
-     */
+    // Reservation nesnesini ReservationResponseDTO'ya dönüştürür
     public ReservationResponseDTO convertToDto(Reservation reservation) {
         ReservationResponseDTO dto = new ReservationResponseDTO();
         dto.setId(reservation.getId());
@@ -114,13 +103,13 @@ public class ReservationService {
         dto.setNumberOfGuests(reservation.getNumberOfGuests());
         dto.setStatus(reservation.getStatus().name());
 
-        // User bilgisi ekleme
+        // Kullanıcı bilgisi ekleme
         UserResponseDTO userDto = new UserResponseDTO();
         userDto.setId(reservation.getUser().getId());
         userDto.setEmail(reservation.getUser().getEmail());
         dto.setUser(userDto);
 
-        // Restaurant bilgisi ekleme
+        // Restoran bilgisi ekleme
         RestaurantResponseDTO restaurantDto = new RestaurantResponseDTO();
         restaurantDto.setId(reservation.getRestaurant().getId());
         restaurantDto.setName(reservation.getRestaurant().getName());

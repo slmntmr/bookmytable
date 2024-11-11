@@ -1,8 +1,16 @@
 package com.bookmytable.dto.Response;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-@Data
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class RestaurantResponseDTO {
     private Long id;
     private String name;

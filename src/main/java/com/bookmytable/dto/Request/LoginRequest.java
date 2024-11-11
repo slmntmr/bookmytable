@@ -1,9 +1,15 @@
 package com.bookmytable.dto.Request;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
-// Kullanıcı kimlik doğrulama isteği için DTO sınıfı
-@Data // Lombok'tan gelen @Data anotasyonu getter, setter ve diğer gerekli metodları oluşturur
+@Getter
+@Setter
+@NoArgsConstructor
+@SuperBuilder
 public class LoginRequest {
 
     private String email; // Kullanıcı e-posta ile giriş yapacak

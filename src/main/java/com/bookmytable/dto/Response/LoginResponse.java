@@ -1,11 +1,16 @@
 package com.bookmytable.dto.Response;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-// Kimlik doğrulama yanıtı için DTO sınıfı
-@Data // Lombok'tan gelen @Data anotasyonu getter ve setter metotlarını otomatik oluşturur
-@AllArgsConstructor // Lombok'tan gelen @AllArgsConstructor anotasyonu tüm alanlar için bir constructor oluşturur
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class LoginResponse {
 
     private String token;
