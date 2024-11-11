@@ -1,6 +1,7 @@
 package com.bookmytable.entity.business;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -24,6 +25,7 @@ public class User {
 
     private String email;
 
+    @JsonIgnore
     private String password;
 
     // Kullanıcının rollerini tutan alan
