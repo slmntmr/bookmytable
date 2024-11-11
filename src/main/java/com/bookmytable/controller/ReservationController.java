@@ -72,9 +72,11 @@ public class ReservationController {
 
 
     //*****************************************************************************************************************
+
+
     // ADMIN rolüne sahip kullanıcıların rezervasyon reddetme işlemi için
     @PreAuthorize("hasAuthority('ADMIN')")
-    @PutMapping("/reject/{id}")
+    @PutMapping("/reject/{id}") //http://localhost:8080/api/reservations/reject/8
     public ResponseEntity<Reservation> rejectReservation(@PathVariable Long id) {
         Reservation rejectedReservation = reservationService.updateReservationStatus(id, "REJECTED");
         return ResponseEntity.ok(rejectedReservation);
@@ -82,6 +84,8 @@ public class ReservationController {
 
 
     //*****************************************************************************************************************
+
+
     // ADMIN rolüne sahip kullanıcıların rezervasyon askıya alma işlemi için
     @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/pending/{id}")
@@ -92,11 +96,16 @@ public class ReservationController {
 
 
     //*****************************************************************************************************************
+
+
     // ADMIN rolüne sahip kullanıcıların rezervasyon silme işlemi için
     @PreAuthorize("hasAuthority('ADMIN')")
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Void> deleteReservation(@PathVariable Long id) {
+    @DeleteMapping("/delete/{id}") // http://localhost:8080/api/reservations/delete/7
+    public ResponseEntity<String> deleteReservation(@PathVariable Long id) {
         reservationService.deleteReservation(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.status(HttpStatus.OK).body("Reservation has been successfully deleted");
     }
+
+
+
 }
